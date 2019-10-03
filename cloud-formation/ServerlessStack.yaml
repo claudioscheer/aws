@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  TestRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: "Role for test."
+      RoleName: IAMStackRoleTest
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        # -
+        #   Ref: TestPolicy
+      Tags:
+        -
+          Key: SERVICE
+          Value: LEARNING
+
+  # TestPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
+  #   Properties:
+  #     Description: "Policy for test."
+  #     ManagedPolicyName: LearningIAMStackPolicyTest
+  #     Path: "/"
+  #     PolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         -
+  #           Effect: "Allow"
+  #           Action:
+  #             - s3:*
+  #           Resource: "arn:aws:s3:::*"
