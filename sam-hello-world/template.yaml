@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-hello-world
+
+Parameters:
+  Environment:
+    Type: String
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 7
+    CodeUri: source/
+    Runtime: nodejs12.x
+    Tags:
+      project: sam-hello-world
+    Tracing: Active
+    AutoPublishAlias: live
+    # DeploymentPreference:
+    #   Type: Linear10PercentEvery10Minutes
+  Api:
+    Cors:
+      AllowHeaders: "'Content-Type, Authorization'"
+      AllowOrigin: "'localhost:3000'"
+      AllowCredentials: true
+
+
+Resources:
+  HelloWorldApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Sub ${Environment}
+      Auth:
+        Authorizers:
+          DefaultFunctionAuthorizer:
+            FunctionPayloadType: TOKEN
+            FunctionArn: !GetAtt DefaultAuthorizer.Arn
+            Identity:
+              Header: Cookie
+              ReauthorizeEvery: 0
+        DefaultAuthorizer: DefaultFunctionAuthorizer
+
+  DefaultAuthorizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: authorizer.handler
+
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      Handler: app.lambdaHandler
+      Events:
+        HelloWorld:
+          Auth:
+            ApiKeyRequired: false
+          Cors:
+            AllowMethods: "'GET,OPTIONS'"
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /
+            Method: GET
+            RestApiId: !Ref HelloWorldApi
+            Auth:
+              Authorizer: DefaultFunctionAuthorizer
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${HelloWorldApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/hello/"
+  HelloWorldFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt HelloWorldFunction.Arn
+  HelloWorldFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt HelloWorldFunctionRole.Arn
